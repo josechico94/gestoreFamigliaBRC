@@ -1,490 +1,535 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Gestore Punti — Firebase (Admins preconfigurati)</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Gestore Punti — Firebase (Mobile)</title>
 
-  <!-- React + Babel + Tailwind -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Firebase SDKs -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getFirestore, collection, doc, addDoc, setDoc, deleteDoc,
-      onSnapshot, query, orderBy, serverTimestamp, getDocs
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import {
-      getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-      signOut, setPersistence, browserLocalPersistence
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getFirestore, collection, doc, addDoc, setDoc, deleteDoc,
+            onSnapshot, query, orderBy, serverTimestamp, getDocs
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import {
+            getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+            signOut, setPersistence, browserLocalPersistence
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    // Config Firebase (tu proyecto)
-    const firebaseConfig = {"apiKey": "AIzaSyB_9OlPqcZ78v9NDJAlr9FxNvYcmgjbyJE", "authDomain": "brc-logistica-famiglie.firebaseapp.com", "projectId": "brc-logistica-famiglie", "storageBucket": "brc-logistica-famiglie.firebasestorage.app", "messagingSenderId": "1097198392202", "appId": "1:1097198392202:web:90ebc7279ab8fd1c7aae73", "measurementId": "G-L88QJ4N0PC"};
+        // Config Firebase (tu proyecto)
+        const firebaseConfig = {"apiKey": "AIzaSyB_9OlPqcZ78v9NDJAlr9FxNvYcmgjbyJE", "authDomain": "brc-logistica-famiglie.firebaseapp.com", "projectId": "brc-logistica-famiglie", "storageBucket": "brc-logistica-famiglie.firebasestorage.app", "messagingSenderId": "1097198392202", "appId": "1:1097198392202:web:90ebc7279ab8fd1c7aae73", "measurementId": "G-L88QJ4N0PC"};
 
-    // Emails autorizzati ad inserire punti
-    const ALLOWED_EMAILS = ["isolani_admin@brc.com", "magnani_admin@brc.com", "casali_admin@brc.com", "albergati_admin@brc.com", "joseichico94@gmail.com"];
+        // Emails autorizzati ad inserire punti
+        const ALLOWED_EMAILS = ["isolani_admin@brc.com", "magnani_admin@brc.com", "casali_admin@brc.com", "albergati_admin@brc.com", "joseichico94@gmail.com"];
 
-    // Inizializza Firebase
-    const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
-    const auth = getAuth(app);
-    setPersistence(auth, browserLocalPersistence);
+        // Inizializza Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        setPersistence(auth, browserLocalPersistence);
 
-    // Esponi per React (Babel)
-    window._fb = {
-      db, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs,
-      auth, onAuthStateChanged, signInWithEmailAndPassword, signOut, ALLOWED_EMAILS
-    };
-  </script>
+        // Esponi per React (Babel)
+        window._fb = {
+            db, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs,
+            auth, onAuthStateChanged, signInWithEmailAndPassword, signOut, ALLOWED_EMAILS
+        };
+    </script>
 </head>
 <body class="bg-gray-950">
-  <div id="root"></div>
+    <div id="root"></div>
 
-  <script type="text/babel">
-    const { useEffect, useMemo, useState } = React;
-    const {
-      db, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs,
-      auth, onAuthStateChanged, signInWithEmailAndPassword, signOut, ALLOWED_EMAILS
-    } = window._fb;
+    <script type="text/babel">
+        const { useEffect, useMemo, useState } = React;
+        const {
+            db, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs,
+            auth, onAuthStateChanged, signInWithEmailAndPassword, signOut, ALLOWED_EMAILS
+        } = window._fb;
 
-    const TEAM_LIST = [
-      { id: "ISOLANI",   name: "ISOLANI" },
-      { id: "ALBERGATI", name: "ALBERGATI" },
-      { id: "CASALI",    name: "CASALI" },
-      { id: "MAGNANI",   name: "MAGNANI" },
-    ];
+        const TEAM_LIST = [
+            { id: "ISOLANI",   name: "ISOLANI" },
+            { id: "ALBERGATI", name: "ALBERGATI" },
+            { id: "CASALI",    name: "CASALI" },
+            { id: "MAGNANI",   name: "MAGNANI" },
+        ];
 
-    const EVENTS = [
-      { id: "MOTM", name: "MOTM", points: 3 },
-      { id: "PEGGIORE_IN_CAMPO", name: "Peggiore in campo", points: -3 },
-      { id: "META", name: "Meta", points: 1 },
-      { id: "DROP_SEGNATO", name: "Drop segnato", points: 1 },
-      { id: "CARTELLINO_GIALLO", name: "Cartellino Giallo", points: -1 },
-      { id: "CARTELLINO_ROSSO", name: "Cartellino rosso", points: -4 },
-      { id: "META_PIAZZATO_DELLA_VITTORIA", name: "Meta/piazzato della vittoria", points: 2 },
-      { id: "MIGLIOR_PLACCAGGIO", name: "Miglior placcaggio", points: 1 },
-      { id: "RUGBY_DUMP", name: "Rugby dump", points: 2 },
-      { id: "PROTESTE", name: "Proteste", points: -5 },
-      { id: "MIGLIORE_DELLA_SETTIMANA", name: "Migliore della settimana", points: 1 },
-      { id: "PIU_PLACCAGGI", name: "Più placcaggi", points: 3 },
-      { id: "MIGLIOR_BALL_CARRIER", name: "Miglior ball carrier", points: 3 },
-      { id: "PIU_PUNIZIONI_CONCESSE", name: "Più punizioni concesse", points: -4 },
-      { id: "MIGLIOR_TURNOVER", name: "Miglior turnover", points: 2 },
-      { id: "PRESENZE_100", name: "100% presenze", points: 3 },
-      { id: "DUE_VS_UNO_MANCATO", name: "2vs1 mancato", points: -1 },
-      { id: "DUTY_MALE", name: "Duty male", points: -1 },
-    ];
+        const EVENTS = [
+            { id: "MOTM", name: "MOTM", points: 3 },
+            { id: "PEGGIORE_IN_CAMPO", name: "Peggiore in campo", points: -3 },
+            { id: "META", name: "Meta", points: 1 },
+            { id: "DROP_SEGNATO", name: "Drop segnato", points: 1 },
+            { id: "CARTELLINO_GIALLO", name: "Cartellino Giallo", points: -1 },
+            { id: "CARTELLINO_ROSSO", name: "Cartellino rosso", points: -4 },
+            { id: "META_PIAZZATO_DELLA_VITTORIA", name: "Meta/piazzato della vittoria", points: 2 },
+            { id: "MIGLIOR_PLACCAGGIO", name: "Miglior placcaggio", points: 1 },
+            { id: "RUGBY_DUMP", name: "Rugby dump", points: 2 },
+            { id: "PROTESTE", name: "Proteste", points: -5 },
+            { id: "MIGLIORE_DELLA_SETTIMANA", name: "Migliore della settimana", points: 1 },
+            { id: "PIU_PLACCAGGI", name: "Più placcaggi", points: 3 },
+            { id: "MIGLIOR_BALL_CARRIER", name: "Miglior ball carrier", points: 3 },
+            { id: "PIU_PUNIZIONI_CONCESSE", name: "Più punizioni concesse", points: -4 },
+            { id: "MIGLIOR_TURNOVER", name: "Miglior turnover", points: 2 },
+            { id: "PRESENZE_100", name: "100% presenze", points: 3 },
+            { id: "DUE_VS_UNO_MANCATO", name: "2vs1 mancato", points: -1 },
+            { id: "DUTY_MALE", name: "Duty male", points: -1 },
+        ];
 
-    function slugify(str) { return (str||"").normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_|_$/g,'').toUpperCase(); }
+        function slugify(str) { return (str||"").normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_|_$/g,'').toUpperCase(); }
 
-    function App() {
-      const [user, setUser] = useState(null);
-      const isAllowed = user?.email && ALLOWED_EMAILS.includes(user.email);
+        function App() {
+            const [user, setUser] = useState(null);
+            const isAllowed = user?.email && ALLOWED_EMAILS.includes(user.email);
 
-      const [players, setPlayers] = useState([]);
-      const [tx, setTx] = useState([]);
+            const [players, setPlayers] = useState([]);
+            const [tx, setTx] = useState([]);
 
-      const [form, setForm] = useState({ playerId: "", teamId: "", eventId: "", delta: "", note: "" });
-      const [playerQuery, setPlayerQuery] = useState("");
-      const [showList, setShowList] = useState(false);
+            const [form, setForm] = useState({ playerId: "", teamId: "", eventId: "", delta: "", note: "" });
+            const [playerQuery, setPlayerQuery] = useState("");
+            const [showList, setShowList] = useState(false);
 
-      const [filterTeam, setFilterTeam] = useState("");
-      const [filterEvent, setFilterEvent] = useState("");
-      const [dateFrom, setDateFrom] = useState("");
-      const [dateTo, setDateTo] = useState("");
+            const [filterTeam, setFilterTeam] = useState("");
+            const [filterEvent, setFilterEvent] = useState("");
+            const [dateFrom, setDateFrom] = useState("");
+            const [dateTo, setDateTo] = useState("");
 
-      const [createOpen, setCreateOpen] = useState(false);
-      const [createPlayer, setCreatePlayer] = useState({ name: "", teamId: "" });
+            const [createOpen, setCreateOpen] = useState(false);
+            const [createPlayer, setCreatePlayer] = useState({ name: "", teamId: "" });
 
-      useEffect(() => onAuthStateChanged(auth, (u)=>setUser(u||null)), []);
+            const [activeTab, setActiveTab] = useState("addPoints"); // Estado para la navegación por pestañas
 
-      useEffect(() => {
-        const q = query(collection(db,"players"), orderBy("name"));
-        return onSnapshot(q, snap => setPlayers(snap.docs.map(d=>({ fid:d.id, ...d.data() }))));
-      }, []);
+            useEffect(() => onAuthStateChanged(auth, (u)=>setUser(u||null)), []);
 
-      useEffect(() => {
-        const q = query(collection(db,"tx"), orderBy("ts","desc"));
-        return onSnapshot(q, snap => setTx(snap.docs.map(d=>({ fid:d.id, ...d.data() }))));
-      }, []);
+            useEffect(() => {
+                const q = query(collection(db,"players"), orderBy("name"));
+                return onSnapshot(q, snap => setPlayers(snap.docs.map(d=>({ fid:d.id, ...d.data() }))));
+            }, []);
 
-      const filteredPlayers = React.useMemo(()=> {
-        const q = playerQuery.trim().toLowerCase();
-        return q ? players.filter(p=>p.name?.toLowerCase().includes(q)) : players;
-      }, [playerQuery, players]);
+            useEffect(() => {
+                const q = query(collection(db,"tx"), orderBy("ts","desc"));
+                return onSnapshot(q, snap => setTx(snap.docs.map(d=>({ fid:d.id, ...d.data() }))));
+            }, []);
 
-      const pointsMap = React.useMemo(()=> {
-        const m = Object.fromEntries(TEAM_LIST.map(t=>[t.id,0]));
-        for (const t1 of tx) if (m[t1.teamId]!==undefined) m[t1.teamId]+=Number(t1.delta)||0;
-        return m;
-      }, [tx]);
+            const filteredPlayers = React.useMemo(()=> {
+                const q = playerQuery.trim().toLowerCase();
+                return q ? players.filter(p=>p.name?.toLowerCase().includes(q)) : players;
+            }, [playerQuery, players]);
 
-      const standings = React.useMemo(()=>([...TEAM_LIST].map(t=>({...t, points: pointsMap[t.id]||0})).sort((a,b)=>b.points-a.points||a.name.localeCompare(b.name))), [pointsMap]);
+            const pointsMap = React.useMemo(()=> {
+                const m = Object.fromEntries(TEAM_LIST.map(t=>[t.id,0]));
+                for (const t1 of tx) if (m[t1.teamId]!==undefined) m[t1.teamId]+=Number(t1.delta)||0;
+                return m;
+            }, [tx]);
 
-      const filteredTx = React.useMemo(()=> {
-        const start = dateFrom ? new Date(dateFrom+'T00:00:00').getTime() : -Infinity;
-        const end   = dateTo   ? new Date(dateTo+'T23:59:59').getTime() : Infinity;
-        return tx.filter(x=> {
-          const t = x.ts?.toMillis ? x.ts.toMillis() : (typeof x.ts==='number'?x.ts:0);
-          return t>=start && t<=end && (!filterTeam || x.teamId===filterTeam) && (!filterEvent || x.eventId===filterEvent);
-        });
-      }, [tx, filterTeam, filterEvent, dateFrom, dateTo]);
+            const standings = React.useMemo(()=>([...TEAM_LIST].map(t=>({...t, points: pointsMap[t.id]||0})).sort((a,b)=>b.points-a.points||a.name.localeCompare(b.name))), [pointsMap]);
 
-      async function doLogin(e) {
-        e.preventDefault();
-        const email = e.target.email.value.trim();
-        const password = e.target.password.value;
-        try { await signInWithEmailAndPassword(auth, email, password); }
-        catch(err) { alert("Login fallito: " + err.message); }
-      }
-      function doLogout() { signOut(auth); }
+            const filteredTx = React.useMemo(()=> {
+                const start = dateFrom ? new Date(dateFrom+'T00:00:00').getTime() : -Infinity;
+                const end = dateTo ? new Date(dateTo+'T23:59:59').getTime() : Infinity;
+                return tx.filter(x=> {
+                    const t = x.ts?.toMillis ? x.ts.toMillis() : (typeof x.ts==='number'?x.ts:0);
+                    return t>=start && t<=end && (!filterTeam || x.teamId===filterTeam) && (!filterEvent || x.eventId===filterEvent);
+                });
+            }, [tx, filterTeam, filterEvent, dateFrom, dateTo]);
 
-      async function addMovement() {
-        if (!isAllowed) return alert("Non hai i permessi per scrivere.");
-        const ev = EVENTS.find(e=>e.id===form.eventId);
-        const teamId = form.teamId;
-        const note = (form.note||"").trim();
-        if (!teamId) return alert("Seleziona una squadra.");
-        if (!ev) return alert("Seleziona un evento.");
-        if (!note) return alert("Aggiungi una nota.");
-        await addDoc(collection(db,"tx"), {
-          teamId, playerId: form.playerId || null, eventId: ev.id, delta: ev.points, note,
-          ts: serverTimestamp(), createdBy: user?.email || null,
-        });
-        setForm({ playerId:"", teamId:"", eventId:"", delta:"", note:"" });
-        setPlayerQuery("");
-      }
+            async function doLogin(e) {
+                e.preventDefault();
+                const email = e.target.email.value.trim();
+                const password = e.target.password.value;
+                try { await signInWithEmailAndPassword(auth, email, password); }
+                catch(err) { alert("Login fallito: " + err.message); }
+            }
+            function doLogout() { signOut(auth); }
 
-      async function createNewPlayer() {
-        if (!isAllowed) return alert("Non hai i permessi per scrivere.");
-        const name = createPlayer.name?.trim(); const teamId = createPlayer.teamId;
-        if (!name) return alert("Scrivi un nome."); if (!teamId) return alert("Seleziona una squadra.");
-        const fid = slugify(name) || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
-        await setDoc(doc(collection(db,"players"), fid), { id: fid, name, teamId });
-        setCreateOpen(false); setPlayerQuery(name); setForm(f=>({ ...f, playerId: fid, teamId }));
-      }
+            async function addMovement() {
+                if (!isAllowed) return alert("Non hai i permessi per scrivere.");
+                const ev = EVENTS.find(e=>e.id===form.eventId);
+                const teamId = form.teamId;
+                const note = (form.note||"").trim();
+                if (!teamId) return alert("Seleziona una squadra.");
+                if (!ev) return alert("Seleziona un evento.");
+                if (!note) return alert("Aggiungi una nota.");
+                await addDoc(collection(db,"tx"), {
+                    teamId, playerId: form.playerId || null, eventId: ev.id, delta: ev.points, note,
+                    ts: serverTimestamp(), createdBy: user?.email || null,
+                });
+                setForm({ playerId:"", teamId:"", eventId:"", delta:"", note:"" });
+                setPlayerQuery("");
+            }
 
-      async function removeMovement(fid) {
-        if (!isAllowed) return alert("Non hai i permessi per scrivere.");
-        if (!confirm("Eliminare questo movimento?")) return;
-        await deleteDoc(doc(db,"tx",fid));
-      }
+            async function createNewPlayer() {
+                if (!isAllowed) return alert("Non hai i permessi per scrivere.");
+                const name = createPlayer.name?.trim(); const teamId = createPlayer.teamId;
+                if (!name) return alert("Scrivi un nome."); if (!teamId) return alert("Seleziona una squadra.");
+                const fid = slugify(name) || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+                await setDoc(doc(collection(db,"players"), fid), { id: fid, name, teamId });
+                setCreateOpen(false); setPlayerQuery(name); setForm(f=>({ ...f, playerId: fid, teamId }));
+            }
 
-      return (
-        <div className="min-h-screen bg-gray-950 text-gray-100 p-6">
-          <div className="max-w-5xl mx-auto space-y-6">
-            <header className="flex items-center justify-between">
-              <h1 className="text-2xl md:text-3xl font-bold">Gestore Punti — 4 Squadre</h1>
-              <div className="flex items-center gap-2">
-                {user ? (
-                  <div className="flex items-center gap-2">
-                    <span className={"text-xs px-2 py-1 rounded " + (isAllowed ? "bg-emerald-700":"bg-gray-700")}>
-                      {isAllowed ? "Scrittura abilitata":"Sola lettura"}
-                    </span>
-                    <span className="text-xs text-gray-400">{user.email}</span>
-                    <button onClick={doLogout} className="px-3 py-2 rounded-xl bg-gray-800 hover:bg-gray-700">Esci</button>
-                  </div>
-                ) : (
-                  <LoginForm onSubmit={doLogin} />
-                )}
-              </div>
-            </header>
+            async function removeMovement(fid) {
+                if (!isAllowed) return alert("Non hai i permessi per scrivere.");
+                if (!confirm("Eliminare questo movimento?")) return;
+                await deleteDoc(doc(db,"tx",fid));
+            }
 
-            <section className={"rounded-2xl p-4 shadow " + (isAllowed ? "bg-gray-900":"bg-gray-900/60")}>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold">Aggiungi punti per evento</h2>
-                {!isAllowed && <span className="text-xs text-amber-400">Effettua l'accesso con un'email autorizzata per aggiungere/modificare</span>}
-              </div>
+            return (
+                <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
+                    <header className="flex items-center justify-between p-4 bg-gray-900 border-b border-gray-800">
+                        <h1 className="text-xl font-bold">Gestore Punti</h1>
+                        <div className="flex items-center gap-2">
+                            {user ? (
+                                <div className="flex items-center gap-2">
+                                    <span className={"text-xs px-2 py-1 rounded " + (isAllowed ? "bg-emerald-700":"bg-gray-700")}>
+                                        {isAllowed ? "Scrittura abilitata":"Sola lettura"}
+                                    </span>
+                                    <button onClick={doLogout} className="text-xs px-2 py-1 rounded bg-gray-800 hover:bg-gray-700">Esci</button>
+                                </div>
+                            ) : (
+                                <LoginForm onSubmit={doLogin} />
+                            )}
+                        </div>
+                    </header>
 
-              <div className="grid md:grid-cols-6 gap-3 items-end">
-                <div className="md:col-span-2 relative">
-                  <label className="text-sm text-gray-400">Giocatore (autocomplete)</label>
-                  <input value={playerQuery} onChange={e=>{setPlayerQuery(e.target.value); setShowList(true);}} onFocus={()=> setShowList(true)} placeholder="Scrivi per cercare..." className="w-full mt-1 px-3 py-2 rounded-xl bg-gray-800" disabled={!isAllowed} />
-                  {showList && isAllowed && (
-                    <div className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-gray-900 border border-gray-800 rounded-xl">
-                      {filteredPlayers.length===0 ? (
-                        <div className="px-3 py-2 text-gray-400">Nessun risultato</div>
-                      ) : filteredPlayers.map(p => (
-                        <button type="button" key={p.fid} onClick={()=> { setForm(f=>({ ...f, playerId:p.id, teamId:p.teamId })); setPlayerQuery(p.name); setShowList(false); }} className="w-full text-left px-3 py-2 hover:bg-gray-800">
-                          <div className="flex items-center justify-between">
-                            <span>{p.name}</span>
-                            <span className="text-xs px-2 py-0.5 rounded bg-gray-800">{TEAM_LIST.find(t=>t.id===p.teamId)?.name}</span>
-                          </div>
+                    <main className="flex-grow p-4 overflow-y-auto">
+                        {activeTab === "addPoints" && (
+                            <section className={"rounded-2xl p-4 shadow " + (isAllowed ? "bg-gray-900":"bg-gray-900/60")}>
+                                <div className="flex items-center justify-between mb-3">
+                                    <h2 className="text-lg font-semibold">Aggiungi punti per evento</h2>
+                                </div>
+                                {!isAllowed && <span className="text-xs text-amber-400 mb-4 block">Effettua l'accesso con un'email autorizzata per aggiungere/modificare</span>}
+
+                                <div className="grid grid-cols-1 gap-4 items-end">
+                                    <div className="relative">
+                                        <label className="text-sm text-gray-400">Giocatore (autocomplete)</label>
+                                        <input value={playerQuery} onChange={e=>{setPlayerQuery(e.target.value); setShowList(true);}} onFocus={()=> setShowList(true)} placeholder="Scrivi per cercare..." className="w-full mt-1 px-3 py-2 rounded-xl bg-gray-800" disabled={!isAllowed} />
+                                        {showList && isAllowed && (
+                                            <div className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-gray-900 border border-gray-800 rounded-xl">
+                                                {filteredPlayers.length===0 ? (
+                                                    <div className="px-3 py-2 text-gray-400">Nessun risultato</div>
+                                                ) : filteredPlayers.map(p => (
+                                                    <button type="button" key={p.fid} onClick={()=> { setForm(f=>({ ...f, playerId:p.id, teamId:p.teamId })); setPlayerQuery(p.name); setShowList(false); }} className="w-full text-left px-3 py-2 hover:bg-gray-800">
+                                                        <div className="flex items-center justify-between">
+                                                            <span>{p.name}</span>
+                                                            <span className="text-xs px-2 py-0.5 rounded bg-gray-800">{TEAM_LIST.find(t=>t.id===p.teamId)?.name}</span>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <div className="mt-1 text-xs text-gray-500">
+                                            Non c'è? <button disabled={!isAllowed} onClick={()=> { setCreateOpen(true); setCreatePlayer({ name: playerQuery.trim(), teamId: form.teamId || "" }); }} className={"underline " + (!isAllowed ? "opacity-50 cursor-not-allowed":"")}>Crea giocatore</button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-sm text-gray-400">Squadra</label>
+                                        <select value={form.teamId} onChange={e=>setForm(f=>({ ...f, teamId:e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-xl bg-gray-800" disabled={!isAllowed}>
+                                            <option value="">— Seleziona —</option>
+                                            {TEAM_LIST.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-sm text-gray-400">Evento</label>
+                                        <select value={form.eventId} onChange={e=>{ const evId=e.target.value; const ev=EVENTS.find(x=>x.id===evId); setForm(f=>({ ...f, eventId:evId, delta: ev? String(ev.points):"", note: ev? ev.name : f.note })); }} className="w-full mt-1 px-3 py-2 rounded-xl bg-gray-800" disabled={!isAllowed}>
+                                            <option value="">— Seleziona —</option>
+                                            {EVENTS.map(ev => <option key={ev.id} value={ev.id}>{ev.name} ({ev.points>0?"+":""}{ev.points})</option>)}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-sm text-gray-400">Punti</label>
+                                        <input value={form.delta} readOnly disabled className="w-full mt-1 px-3 py-2 rounded-xl bg-gray-800 opacity-70 cursor-not-allowed" />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-sm text-gray-400">Nota (modificabile)</label>
+                                        <input value={form.note} onChange={e=>setForm(f=>({ ...f, note:e.target.value }))} placeholder="Descrivi il motivo" className="w-full mt-1 px-3 py-2 rounded-xl bg-gray-800" disabled={!isAllowed} />
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <button onClick={addMovement} disabled={!isAllowed} className={"px-4 py-2 rounded-xl font-medium " + (isAllowed? "bg-emerald-600 hover:bg-emerald-500":"bg-gray-700 cursor-not-allowed")}>Salva movimento</button>
+                                    </div>
+                                </div>
+                            </section>
+                        )}
+
+                        {activeTab === "history" && (
+                            <section className="bg-gray-900 rounded-2xl p-4 shadow">
+                                <div className="mb-3">
+                                    <h2 className="text-lg font-semibold">Storico</h2>
+                                    <p className="text-xs text-gray-400">Filtra per squadra, evento e intervallo di date.</p>
+                                </div>
+                                <div className="flex flex-col gap-2 mb-4 text-sm">
+                                    <div className="flex flex-col">
+                                        <span className="text-gray-400">Squadra:</span>
+                                        <select value={filterTeam} onChange={e=>setFilterTeam(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-800">
+                                            <option value="">Tutte</option>
+                                            {TEAM_LIST.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-gray-400">Evento:</span>
+                                        <select value={filterEvent} onChange={e=>setFilterEvent(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-800">
+                                            <option value="">Tutti</option>
+                                            {EVENTS.map(ev => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-gray-400">Da:</span>
+                                        <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-800"/>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-gray-400">A:</span>
+                                        <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-800"/>
+                                    </div>
+                                    {(dateFrom||dateTo||filterTeam||filterEvent) && (
+                                        <button onClick={()=>{ setFilterTeam(""); setFilterEvent(""); setDateFrom(""); setDateTo(""); }} className="px-3 py-2 mt-2 bg-gray-800 rounded-xl hover:bg-gray-700">Pulisci Filtri</button>
+                                    )}
+                                </div>
+
+                                <div className="overflow-x-auto rounded-xl border border-gray-800">
+                                    <table className="min-w-full text-sm">
+                                        <thead className="bg-gray-800">
+                                            <tr className="text-left text-gray-300">
+                                                <th className="px-3 py-2">Data</th>
+                                                <th className="px-3 py-2">Squadra</th>
+                                                <th className="px-3 py-2">Giocatore</th>
+                                                <th className="px-3 py-2">Evento</th>
+                                                <th className="px-3 py-2">Δ Punti</th>
+                                                <th className="px-3 py-2"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredTx.length===0 ? (
+                                                <tr><td className="px-3 py-3 text-gray-400" colSpan={6}>Nessun movimento con i filtri attuali.</td></tr>
+                                            ) : filteredTx.map(item => {
+                                                const teamName = TEAM_LIST.find(t=>t.id===item.teamId)?.name || item.teamId;
+                                                const playerName = players.find(p=>p.id===item.playerId)?.name || "-";
+                                                const eventName = EVENTS.find(e=>e.id===item.eventId)?.name || "-";
+                                                const stamp = item.ts?.toDate ? item.ts.toDate().toLocaleString() : "-";
+                                                return (
+                                                    <tr key={item.fid} className="border-t border-gray-800">
+                                                        <td className="px-3 py-2 whitespace-nowrap">{stamp}</td>
+                                                        <td className="px-3 py-2">{teamName}</td>
+                                                        <td className="px-3 py-2">{playerName}</td>
+                                                        <td className="px-3 py-2">{eventName}</td>
+                                                        <td className={"px-3 py-2 " + (item.delta>=0 ? "text-emerald-400":"text-red-400")}>{item.delta>=0?"+":""}{item.delta}</td>
+                                                        <td className="px-3 py-2 text-right">
+                                                            <button onClick={()=> removeMovement(item.fid)} disabled={!isAllowed} className={"text-sm px-2 py-1 rounded-lg " + (isAllowed ? "bg-gray-700 hover:bg-gray-600":"bg-gray-800 opacity-50 cursor-not-allowed")}>Cancella</button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        )}
+
+                        {activeTab === "dashboard" && (
+                            <section className="bg-gray-900 rounded-2xl p-4 shadow">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h2 className="text-lg font-semibold">Dashboard</h2>
+                                    <p className="text-xs text-gray-400">Aggiornamento in tempo reale.</p>
+                                </div>
+
+                                <div className="mb-6">
+                                    <h3 className="font-semibold mb-2">Classifica individuale</h3>
+                                    <Leaderboard players={players} tx={filteredTx} />
+                                </div>
+
+                                <div className="mb-6">
+                                    <h3 className="font-semibold mb-2">Eventi — frequenza e punti</h3>
+                                    <EventStats tx={filteredTx} />
+                                </div>
+
+                                <div>
+                                    <h3 className="font-semibold mb-2">Classifica squadre (tempo reale)</h3>
+                                    <Standings standings={standings} />
+                                </div>
+                            </section>
+                        )}
+                    </main>
+
+                    {/* Navegación inferior tipo app móvil */}
+                    <footer className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 flex justify-around p-2 shadow-lg z-20">
+                        <button
+                            onClick={() => setActiveTab("addPoints")}
+                            className={`flex flex-col items-center p-2 rounded-xl text-xs font-medium ${activeTab === "addPoints" ? "text-emerald-400 bg-gray-800" : "text-gray-400 hover:text-gray-300"}`}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Punti
                         </button>
-                      ))}
+                        <button
+                            onClick={() => setActiveTab("history")}
+                            className={`flex flex-col items-center p-2 rounded-xl text-xs font-medium ${activeTab === "history" ? "text-emerald-400 bg-gray-800" : "text-gray-400 hover:text-gray-300"}`}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375H12a3.375 3.375 0 0 0-3.375 3.375v2.625m3.375-3.375h.008v.008h-.008v-.008Zm0 0H12m2.816 0A9.752 9.752 0 0 0 12 9.75a9.752 9.752 0 0 0-2.816-.375M9.75 9.75H8.25m0 0H6.75A2.25 2.25 0 0 0 4.5 12v.75m10.5-6H19.5a2.25 2.25 0 0 1 2.25 2.25v2.75M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
+                            </svg>
+                            Storico
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("dashboard")}
+                            className={`flex flex-col items-center p-2 rounded-xl text-xs font-medium ${activeTab === "dashboard" ? "text-emerald-400 bg-gray-800" : "text-gray-400 hover:text-gray-300"}`}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125l7.246-7.246a4.5 4.015 0 0 1 6.136-.554l.001.001 2.929 2.929A3.75 3.75 0 0 1 21 12.125V19.5M3 13.125h1.75c.95 0 1.874.195 2.722.568M3 13.125a6.5 6.5 0 0 0 2.222 3.03M12 7.5h.008v.008H12V7.5Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM12 15h.008v.008H12V15Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm3.75-5.25h.008v.008h-.008V9.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                            </svg>
+                            Dashboard
+                        </button>
+                    </footer>
+
+
+                    {createOpen && (
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-30">
+                            <div className="bg-gray-900 rounded-2xl max-w-sm w-full p-4 space-y-3 border border-gray-800">
+                                <h3 className="text-lg font-semibold">Crea nuovo giocatore</h3>
+                                <input value={createPlayer.name} onChange={e=>setCreatePlayer(p=>({ ...p, name:e.target.value }))} placeholder="Nome e cognome" className="w-full bg-gray-800 rounded-xl p-3 outline-none" />
+                                <select value={createPlayer.teamId} onChange={e=>setCreatePlayer(p=>({ ...p, teamId:e.target.value }))} className="w-full bg-gray-800 rounded-xl p-3">
+                                    <option value="">— Squadra —</option>
+                                    {TEAM_LIST.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                </select>
+                                <div className="flex justify-end gap-2">
+                                    <button onClick={()=> setCreateOpen(false)} className="px-3 py-2 rounded-xl bg-gray-800 hover:bg-gray-700">Annulla</button>
+                                    <button onClick={createNewPlayer} className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500">Crea</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function LoginForm({ onSubmit }) {
+            const [show, setShow] = React.useState(false);
+            return (
+                <form onSubmit={onSubmit} className="flex flex-col gap-2 p-3 bg-gray-800 rounded-xl shadow-inner">
+                    <input name="email" type="email" placeholder="Email" className="px-3 py-2 rounded-lg bg-gray-700 text-sm" required />
+                    <div className="flex items-center gap-2">
+                        <input name="password" type={show ? "text" : "password"} placeholder="Password" className="flex-grow px-3 py-2 rounded-lg bg-gray-700 text-sm" required />
+                        <button type="button" onClick={()=>setShow(s=>!s)} className="p-2 rounded-lg bg-gray-600 text-sm">{show?"🙈":"👁️"}</button>
                     </div>
-                  )}
-                  <div className="mt-1 text-xs text-gray-500">
-                    Non c'è? <button disabled={!isAllowed} onClick={()=> { setCreateOpen(true); setCreatePlayer({ name: playerQuery.trim(), teamId: form.teamId || "" }); }} className={"underline " + (!isAllowed ? "opacity-50 cursor-not-allowed":"")}>Crea giocatore</button>
-                  </div>
+                    <button type="submit" className="mt-2 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-medium">Accedi</button>
+                </form>
+            );
+        }
+
+        // --- Componentes Leaderboard, EventStats y Standings se mantienen casi igual,
+        //     pero sus contenedores se adaptan al flujo móvil.
+        //     Asegúrate de que los filtros dentro de Leaderboard sean responsivos.
+
+        function Leaderboard({ players, tx }) {
+            const map = new Map();
+            for (const m of tx) { if (!m.playerId) continue; const cur = map.get(m.playerId)||{points:0,count:0}; cur.points += Number(m.delta)||0; cur.count += 1; map.set(m.playerId, cur); }
+            const rows = players.map(p=>({ id:p.id, name:p.name, teamId:p.teamId, points: map.get(p.id)?.points||0, count: map.get(p.id)?.count||0 })).sort((a,b)=>b.points-a.points||a.name.localeCompare(b.name));
+            const [q,setQ]=React.useState(""); const [team,setTeam]=React.useState("");
+            const filtered = rows.filter(r => (!team||r.teamId===team) && (!q||r.name.toLowerCase().includes(q.toLowerCase())));
+            return (
+                <div className="overflow-x-auto rounded-xl border border-gray-800">
+                    <div className="p-2 flex flex-col gap-2 text-sm"> {/* Flex-col para móvil */}
+                        <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Cerca giocatore" className="px-2 py-1 rounded-lg bg-gray-800"/>
+                        <select value={team} onChange={e=>setTeam(e.target.value)} className="px-2 py-1 rounded-lg bg-gray-800">
+                            <option value="">Tutte le squadre</option>
+                            {TEAM_LIST.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        </select>
+                        {(q||team) && (
+                            <button onClick={()=>{setQ(""); setTeam("");}} className="px-2 py-1 bg-gray-800 rounded-lg hover:bg-gray-700">Pulisci</button>
+                        )}
+                    </div>
+                    <table className="min-w-full text-sm">
+                        <thead className="bg-gray-800">
+                            <tr className="text-left text-gray-300">
+                                <th className="px-3 py-2">#</th>
+                                <th className="px-3 py-2">Giocatore</th>
+                                <th className="px-3 py-2">Squadra</th>
+                                <th className="px-3 py-2">Eventi</th>
+                                <th className="px-3 py-2">Punti</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filtered.length===0 ? (
+                                <tr><td className="px-3 py-3 text-gray-400" colSpan={5}>Nessun dato.</td></tr>
+                            ) : filtered.map((r,i)=> (
+                                <tr key={r.id} className={(i%2?"bg-gray-900":"bg-gray-950")+" border-t border-gray-800"}>
+                                    <td className="px-3 py-2">{i+1}</td>
+                                    <td className="px-3 py-2">{r.name}</td>
+                                    <td className="px-3 py-2">{TEAM_LIST.find(t=>t.id===r.teamId)?.name}</td>
+                                    <td className="px-3 py-2">{r.count}</td>
+                                    <td className="px-3 py-2 font-semibold">{r.points}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
+            );
+        }
 
-                <div>
-                  <label className="text-sm text-gray-400">Squadra</label>
-                  <select value={form.teamId} onChange={e=>setForm(f=>({ ...f, teamId:e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-xl bg-gray-800" disabled={!isAllowed}>
-                    <option value="">— Seleziona —</option>
-                    {TEAM_LIST.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
+        function EventStats({ tx }) {
+            const map = new Map();
+            for (const m of tx) { const cur = map.get(m.eventId)||{count:0,points:0,last:0}; cur.count+=1; cur.points+=Number(m.delta)||0; const t=m.ts?.toMillis?m.ts.toMillis():0; cur.last=Math.max(cur.last,t); map.set(m.eventId,cur); }
+            const rows = Array.from(map.entries()).map(([eventId,v])=>({ id:eventId, name:(EVENTS.find(e=>e.id===eventId)?.name)||eventId, count:v.count, points:v.points, last:v.last })).sort((a,b)=> b.count-a.count || a.name.localeCompare(b.name));
+            return (
+                <div className="overflow-x-auto rounded-xl border border-gray-800">
+                    <div className="p-2 text-sm text-gray-400">Riepilogo occorrenze e punti per evento.</div>
+                    <table className="min-w-full text-sm">
+                        <thead className="bg-gray-800">
+                            <tr className="text-left text-gray-300">
+                                <th className="px-3 py-2">Evento</th>
+                                <th className="px-3 py-2">Occorrenze</th>
+                                <th className="px-3 py-2">Punti totali</th>
+                                <th className="px-3 py-2">Ultima volta</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows.length===0 ? (
+                                <tr><td className="px-3 py-3 text-gray-400" colSpan={4}>Nessun dato.</td></tr>
+                            ) : rows.map(r => (
+                                <tr key={r.id} className="border-t border-gray-800">
+                                    <td className="px-3 py-2">{r.name}</td>
+                                    <td className="px-3 py-2">{r.count}</td>
+                                    <td className={"px-3 py-2 " + (r.points>=0?"text-emerald-400":"text-red-400")}>{r.points>=0?"+":""}{r.points}</td>
+                                    <td className="px-3 py-2">{r.last? new Date(r.last).toLocaleString(): "-"}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
+            );
+        }
 
-                <div>
-                  <label className="text-sm text-gray-400">Evento</label>
-                  <select value={form.eventId} onChange={e=>{ const evId=e.target.value; const ev=EVENTS.find(x=>x.id===evId); setForm(f=>({ ...f, eventId:evId, delta: ev? String(ev.points):"", note: ev? ev.name : f.note })); }} className="w-full mt-1 px-3 py-2 rounded-xl bg-gray-800" disabled={!isAllowed}>
-                    <option value="">— Seleziona —</option>
-                    {EVENTS.map(ev => <option key={ev.id} value={ev.id}>{ev.name} ({ev.points>0?"+":""}{ev.points})</option>)}
-                  </select>
+        function Standings({ standings }) {
+            return (
+                <div className="overflow-x-auto rounded-xl border border-gray-800">
+                    <table className="min-w-full text-sm">
+                        <thead className="bg-gray-800">
+                            <tr className="text-left text-gray-300">
+                                <th className="px-3 py-2">#</th>
+                                <th className="px-3 py-2">Squadra</th>
+                                <th className="px-3 py-2">Punti</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {standings.map((t,i)=>(
+                                <tr key={t.id} className={(i%2?"bg-gray-900":"bg-gray-950")+" border-t border-gray-800"}>
+                                    <td className="px-3 py-2">{i+1}</td>
+                                    <td className="px-3 py-2 font-medium">{t.name}</td>
+                                    <td className="px-3 py-2">{t.points}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
+            );
+        }
 
-                <div>
-                  <label className="text-sm text-gray-400">Punti</label>
-                  <input value={form.delta} readOnly disabled className="w-full mt-1 px-3 py-2 rounded-xl bg-gray-800 opacity-70 cursor-not-allowed" />
-                </div>
-
-                <div>
-                  <label className="text-sm text-gray-400">Nota (modificabile)</label>
-                  <input value={form.note} onChange={e=>setForm(f=>({ ...f, note:e.target.value }))} placeholder="Descrivi il motivo" className="w-full mt-1 px-3 py-2 rounded-xl bg-gray-800" disabled={!isAllowed} />
-                </div>
-
-                <div className="md:col-span-6 flex justify-end">
-                  <button onClick={addMovement} disabled={!isAllowed} className={"px-4 py-2 rounded-xl font-medium " + (isAllowed? "bg-emerald-600 hover:bg-emerald-500":"bg-gray-700 cursor-not-allowed")}>Salva movimento</button>
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-gray-900 rounded-2xl p-4 shadow">
-              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-3">
-                <div>
-                  <h2 className="text-lg font-semibold">Storico</h2>
-                  <p className="text-xs text-gray-400">Filtra per squadra, evento e intervallo di date.</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <span className="text-gray-400">Squadra:</span>
-                  <select value={filterTeam} onChange={e=>setFilterTeam(e.target.value)} className="px-2 py-1 rounded-lg bg-gray-800">
-                    <option value="">Tutte</option>
-                    {TEAM_LIST.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                  <span className="text-gray-400 ml-2">Evento:</span>
-                  <select value={filterEvent} onChange={e=>setFilterEvent(e.target.value)} className="px-2 py-1 rounded-lg bg-gray-800">
-                    <option value="">Tutti</option>
-                    {EVENTS.map(ev => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
-                  </select>
-                  <span className="text-gray-400 ml-2">Da:</span>
-                  <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} className="px-2 py-1 rounded-lg bg-gray-800"/>
-                  <span className="text-gray-400">A:</span>
-                  <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} className="px-2 py-1 rounded-lg bg-gray-800"/>
-                  {(dateFrom||dateTo||filterTeam||filterEvent) && (
-                    <button onClick={()=>{ setFilterTeam(""); setFilterEvent(""); setDateFrom(""); setDateTo(""); }} className="ml-2 px-2 py-1 bg-gray-800 rounded-lg hover:bg-gray-700">Pulisci</button>
-                  )}
-                </div>
-              </div>
-
-              <div className="overflow-x-auto rounded-xl border border-gray-800">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-800">
-                    <tr className="text-left text-gray-300">
-                      <th className="px-3 py-2">Data</th>
-                      <th className="px-3 py-2">Squadra</th>
-                      <th className="px-3 py-2">Giocatore</th>
-                      <th className="px-3 py-2">Evento</th>
-                      <th className="px-3 py-2">Δ Punti</th>
-                      <th className="px-3 py-2">Nota</th>
-                      <th className="px-3 py-2"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTx.length===0 ? (
-                      <tr><td className="px-3 py-3 text-gray-400" colSpan={7}>Nessun movimento con i filtri attuali.</td></tr>
-                    ) : filteredTx.map(item => {
-                      const teamName = TEAM_LIST.find(t=>t.id===item.teamId)?.name || item.teamId;
-                      const playerName = players.find(p=>p.id===item.playerId)?.name || "-";
-                      const eventName = EVENTS.find(e=>e.id===item.eventId)?.name || "-";
-                      const stamp = item.ts?.toDate ? item.ts.toDate().toLocaleString() : "-";
-                      return (
-                        <tr key={item.fid} className="border-t border-gray-800">
-                          <td className="px-3 py-2 whitespace-nowrap">{stamp}</td>
-                          <td className="px-3 py-2">{teamName}</td>
-                          <td className="px-3 py-2">{playerName}</td>
-                          <td className="px-3 py-2">{eventName}</td>
-                          <td className={"px-3 py-2 " + (item.delta>=0 ? "text-emerald-400":"text-red-400")}>{item.delta>=0?"+":""}{item.delta}</td>
-                          <td className="px-3 py-2">{item.note}</td>
-                          <td className="px-3 py-2 text-right">
-                            <button onClick={()=> removeMovement(item.fid)} disabled={!isAllowed} className={"text-sm px-2 py-1 rounded-lg " + (isAllowed ? "bg-gray-700 hover:bg-gray-600":"bg-gray-800 opacity-50 cursor-not-allowed")}>Cancella</button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <section className="bg-gray-900 rounded-2xl p-4 shadow">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold">Dashboard</h2>
-                <p className="text-xs text-gray-400">Aggiornamento in tempo reale.</p>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="font-semibold mb-2">Classifica individuale</h3>
-                <Leaderboard players={players} tx={filteredTx} />
-              </div>
-
-              <div className="mb-6">
-                <h3 className="font-semibold mb-2">Eventi — frequenza e punti</h3>
-                <EventStats tx={filteredTx} />
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-2">Classifica squadre (tempo reale)</h3>
-                <Standings standings={standings} />
-              </div>
-            </section>
-
-            {createOpen && (
-              <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-                <div className="bg-gray-900 rounded-2xl max-w-md w-full p-4 space-y-3 border border-gray-800">
-                  <h3 className="text-lg font-semibold">Crea nuovo giocatore</h3>
-                  <input value={createPlayer.name} onChange={e=>setCreatePlayer(p=>({ ...p, name:e.target.value }))} placeholder="Nome e cognome" className="w-full bg-gray-800 rounded-xl p-3 outline-none" />
-                  <select value={createPlayer.teamId} onChange={e=>setCreatePlayer(p=>({ ...p, teamId:e.target.value }))} className="w-full bg-gray-800 rounded-xl p-3">
-                    <option value="">— Squadra —</option>
-                    {TEAM_LIST.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                  <div className="flex justify-end gap-2">
-                    <button onClick={()=> setCreateOpen(false)} className="px-3 py-2 rounded-xl bg-gray-800 hover:bg-gray-700">Annulla</button>
-                    <button onClick={createNewPlayer} className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500">Crea</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <footer className="text-xs text-gray-500 pt-4 pb-6">
-              Solo le email autorizzate possono aggiungere/eliminare. Tutti possono visualizzare in tempo reale.
-            </footer>
-          </div>
-        </div>
-      );
-    }
-
-    function LoginForm({ onSubmit }) {
-      const [show, setShow] = React.useState(false);
-      return (
-        <form onSubmit={onSubmit} className="flex items-center gap-2">
-          <input name="email" type="email" placeholder="Email" className="px-3 py-2 rounded-xl bg-gray-800" required />
-          <input name="password" type={show ? "text" : "password"} placeholder="Password" className="px-3 py-2 rounded-xl bg-gray-800" required />
-          <button type="button" onClick={()=>setShow(s=>!s)} className="px-2 py-2 rounded-xl bg-gray-800">{show?"🙈":"👁️"}</button>
-          <button type="submit" className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500">Accedi</button>
-        </form>
-      );
-    }
-
-    function Leaderboard({ players, tx }) {
-      const map = new Map();
-      for (const m of tx) { if (!m.playerId) continue; const cur = map.get(m.playerId)||{points:0,count:0}; cur.points += Number(m.delta)||0; cur.count += 1; map.set(m.playerId, cur); }
-      const rows = players.map(p=>({ id:p.id, name:p.name, teamId:p.teamId, points: map.get(p.id)?.points||0, count: map.get(p.id)?.count||0 })).sort((a,b)=>b.points-a.points||a.name.localeCompare(b.name));
-      const [q,setQ]=React.useState(""); const [team,setTeam]=React.useState("");
-      const filtered = rows.filter(r => (!team||r.teamId===team) && (!q||r.name.toLowerCase().includes(q.toLowerCase())));
-      return (
-        <div className="overflow-x-auto rounded-xl border border-gray-800">
-          <div className="p-2 flex flex-wrap items-center gap-2 text-sm">
-            <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Cerca giocatore" className="px-2 py-1 rounded-lg bg-gray-800"/>
-            <select value={team} onChange={e=>setTeam(e.target.value)} className="px-2 py-1 rounded-lg bg-gray-800">
-              <option value="">Tutte le squadre</option>
-              {TEAM_LIST.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
-            <button onClick={()=>{setQ(""); setTeam("");}} className="px-2 py-1 bg-gray-800 rounded-lg hover:bg-gray-700">Pulisci</button>
-          </div>
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-800">
-              <tr className="text-left text-gray-300">
-                <th className="px-3 py-2">#</th>
-                <th className="px-3 py-2">Giocatore</th>
-                <th className="px-3 py-2">Squadra</th>
-                <th className="px-3 py-2">Eventi</th>
-                <th className="px-3 py-2">Punti</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length===0 ? (
-                <tr><td className="px-3 py-3 text-gray-400" colSpan={5}>Nessun dato.</td></tr>
-              ) : filtered.map((r,i)=> (
-                <tr key={r.id} className={(i%2?"bg-gray-900":"bg-gray-950")+" border-t border-gray-800"}>
-                  <td className="px-3 py-2">{i+1}</td>
-                  <td className="px-3 py-2">{r.name}</td>
-                  <td className="px-3 py-2">{TEAM_LIST.find(t=>t.id===r.teamId)?.name}</td>
-                  <td className="px-3 py-2">{r.count}</td>
-                  <td className="px-3 py-2 font-semibold">{r.points}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-
-    function EventStats({ tx }) {
-      const map = new Map();
-      for (const m of tx) { const cur = map.get(m.eventId)||{count:0,points:0,last:0}; cur.count+=1; cur.points+=Number(m.delta)||0; const t=m.ts?.toMillis?m.ts.toMillis():0; cur.last=Math.max(cur.last,t); map.set(m.eventId,cur); }
-      const rows = Array.from(map.entries()).map(([eventId,v])=>({ id:eventId, name:(EVENTS.find(e=>e.id===eventId)?.name)||eventId, count:v.count, points:v.points, last:v.last })).sort((a,b)=> b.count-a.count || a.name.localeCompare(b.name));
-      return (
-        <div className="overflow-x-auto rounded-xl border border-gray-800">
-          <div className="p-2 text-sm text-gray-400">Riepilogo occorrenze e punti per evento.</div>
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-800">
-              <tr className="text-left text-gray-300">
-                <th className="px-3 py-2">Evento</th>
-                <th className="px-3 py-2">Occorrenze</th>
-                <th className="px-3 py-2">Punti totali</th>
-                <th className="px-3 py-2">Ultima volta</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length===0 ? (
-                <tr><td className="px-3 py-3 text-gray-400" colSpan={4}>Nessun dato.</td></tr>
-              ) : rows.map(r => (
-                <tr key={r.id} className="border-t border-gray-800">
-                  <td className="px-3 py-2">{r.name}</td>
-                  <td className="px-3 py-2">{r.count}</td>
-                  <td className={"px-3 py-2 " + (r.points>=0?"text-emerald-400":"text-red-400")}>{r.points>=0?"+":""}{r.points}</td>
-                  <td className="px-3 py-2">{r.last? new Date(r.last).toLocaleString(): "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-
-    function Standings({ standings }) {
-      return (
-        <div className="overflow-x-auto rounded-xl border border-gray-800">
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-800">
-              <tr className="text-left text-gray-300">
-                <th className="px-3 py-2">#</th>
-                <th className="px-3 py-2">Squadra</th>
-                <th className="px-3 py-2">Punti</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standings.map((t,i)=>(
-                <tr key={t.id} className={(i%2?"bg-gray-900":"bg-gray-950")+" border-t border-gray-800"}>
-                  <td className="px-3 py-2">{i+1}</td>
-                  <td className="px-3 py-2 font-medium">{t.name}</td>
-                  <td className="px-3 py-2">{t.points}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
 </body>
 </html>
